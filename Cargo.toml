@@ -1,0 +1,8 @@
+[package]
+name = "standardnotes-rs"
+version = "0.1.0"
+authors = ["Lane Sawyer <github@lanesawyer.dev>"]
+edition = "2018"
+
+[dependencies]
+rocket = "0.4.5"
