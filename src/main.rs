@@ -3,8 +3,14 @@
 #[macro_use]
 extern crate rocket;
 
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
 mod api;
+mod db;
 mod jwt;
+mod schema;
 
 fn main() {
     rocket::ignite()

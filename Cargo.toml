@@ -6,6 +6,8 @@ edition = "2018"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
+diesel = { version = "1.4.4", features = ["postgres"] }
+dotenv = "0.15.0"
 jsonwebtoken = "7"
 rocket = "0.4.5"
 rocket_contrib = "0.4.5"

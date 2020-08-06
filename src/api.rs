@@ -1,4 +1,4 @@
-use crate::jwt::{build_jwt, decode_jwt, Token};
+use crate::{db::establish_connection, jwt::{build_jwt, decode_jwt, Token}};
 use chrono::{DateTime, Utc};
 use request::FromRequest;
 use response::Responder;
@@ -10,10 +10,14 @@ use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 use jsonwebtoken::errors::ErrorKind;
+use diesel::prelude::*;
+use super::schema::users;
+
 
 #[post("/", data = "<user>")]
 pub fn auth(user: Json<User>) -> ApiResponse<Json<Token>> {
-    if user.save() {
+    let connection = establish_connection();
+    if user.save(&connection) {
         Ok(Json(Token {
             token: build_jwt(user.email.to_owned()),
         }))
@@ -78,7 +82,8 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Queryable, Insertable)]
+#[table_name="users"]
 pub struct User {
     email: String,
     password: String,
@@ -88,8 +93,28 @@ pub struct User {
 }
 
 impl User {
-    fn save(&self) -> bool {
-        // TODO: Save users
+    fn save(&self, conn: &PgConnection) -> bool {
+        use crate::schema::users;
+    
+        diesel::insert_into(users::table)
+            .values(self)
+            .get_result::<User>(conn)
+            .expect("Error saving new user");
+
+
+
+        // use crate::schema::users::dsl::*;
+
+        // let connection = establish_connection();
+        // let results = users
+        //     .limit(5)
+        //     .load::<User>(&connection)
+        //     .expect("Error loading users");
+    
+        // println!("Displaying {} users", results.len());
+        // for user in results {
+        //     println!("{}", user.email);
+        // }
         true
     }
 }
@@ -121,7 +146,7 @@ pub struct Sync {
     limit: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Queryable)]
 struct Item {
     uuid: String,
     content: String,
