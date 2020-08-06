@@ -1,51 +1,81 @@
+use crate::jwt::{build_jwt, decode_jwt, Token};
 use chrono::{DateTime, Utc};
-use rocket::http::Status;
+use request::FromRequest;
+use response::Responder;
+use rocket::{
+    http::{ContentType, Status},
+    request, response, Outcome, Request, Response,
+};
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
-
-use crate::jwt::{build_jwt, Token};
+use std::io::Cursor;
+use jsonwebtoken::errors::ErrorKind;
 
 #[post("/", data = "<user>")]
-pub fn auth(user: Json<User>) -> Json<Token> {
-    // TODO: Create user, handle errors
-
-    Json(Token {
-        token: build_jwt(user.email.to_owned()),
-    })
+pub fn auth(user: Json<User>) -> ApiResponse<Json<Token>> {
+    if user.save() {
+        Ok(Json(Token {
+            token: build_jwt(user.email.to_owned()),
+        }))
+    } else {
+        Err(ApiError {
+            errors: vec!["Unable to create user account".to_owned()],
+        })
+    }
 }
 
 #[post("/change_pw", data = "<change_pw>")]
-pub fn change_pw(change_pw: Json<ChangePassword>) -> Status {
+pub fn change_pw(user: AuthUser, change_pw: Json<ChangePassword>) -> ApiResponse<Status> {
     // TODO: Change password, handle errors
 
-    Status::NoContent
+    Ok(Status::NoContent)
 }
 
 #[post("/sign_in", data = "<sign_in>")]
-pub fn sign_in(sign_in: Json<SignIn>) -> Json<Token> {
+pub fn sign_in(user: AuthUser, sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
     // TODO: Check user info, handle errors
 
-    Json(Token {
+    Ok(Json(Token {
         token: build_jwt(sign_in.email.to_owned()),
-    })
+    }))
 }
 
 #[get("/params/<email>")]
-pub fn params(email: String) -> Json<Token> {
+pub fn params(user: AuthUser, email: String) -> ApiResponse<Json<Token>> {
     // TODO: Retrieve params, handle errors
 
-    Json(Token {
+    Ok(Json(Token {
         token: build_jwt(email),
-    })
+    }))
 }
 
 #[post("/sync", data = "<sync>")]
-pub fn sync(sync: Json<Sync>) -> Json<Token> {
+pub fn sync(user: AuthUser, sync: Json<Sync>) -> ApiResponse<Json<Token>> {
     // TODO: Sync the data, handle errors
 
-    Json(Token {
+    Ok(Json(Token {
         token: build_jwt("what".to_owned()),
-    })
+    }))
+}
+
+type ApiResponse<T> = Result<T, ApiError>;
+
+#[derive(Debug)]
+pub struct ApiError {
+    errors: Vec<String>,
+}
+
+impl<'r> Responder<'r> for ApiError {
+    fn respond_to(self, _: &Request) -> response::Result<'r> {
+        Response::build()
+            // TODO: Use errors from self
+            .sized_body(Cursor::new(format!(
+                "{{errors:[{}]}}",
+                "replace with errors"
+            )))
+            .header(ContentType::new("application", "json"))
+            .ok()
+    }
 }
 
 #[derive(Deserialize)]
@@ -55,6 +85,13 @@ pub struct User {
     pw_cost: String,
     pw_nonce: String,
     version: String,
+}
+
+impl User {
+    fn save(&self) -> bool {
+        // TODO: Save users
+        true
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -93,4 +130,34 @@ struct Item {
     deleted: bool,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug)]
+pub struct AuthUser {
+    email: String
+}
+
+#[derive(Debug)]
+pub struct ApiKeyError(pub String);
+
+impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
+    type Error = ApiKeyError;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+        if let Some(header) = request.headers().get_one("Authorization") {
+            if !header.starts_with("Bearer ") {
+                return Outcome::Failure((Status::Unauthorized, ApiKeyError("Authorization header malformed".to_owned())));
+            }
+
+            if let Ok(claim) = decode_jwt(header[7..].to_owned()) {
+                return Outcome::Success(AuthUser {
+                    email: claim.claims.sub
+                });
+            }
+        } else {
+            return Outcome::Failure((Status::Unauthorized, ApiKeyError("Authorization header missing".to_owned())))
+        }
+
+        Outcome::Failure((Status::Unauthorized, ApiKeyError("Unable to authenticate".to_owned())))
+    }
 }

@@ -8,7 +8,10 @@ mod jwt;
 
 fn main() {
     rocket::ignite()
-        .mount("/auth", routes![api::auth, api::change_pw, api::sign_in, api::params])
+        .mount(
+            "/auth",
+            routes![api::auth, api::change_pw, api::sign_in, api::params],
+        )
         .mount("/items", routes![api::sync])
         .launch();
 }
