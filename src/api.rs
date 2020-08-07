@@ -1,5 +1,5 @@
+use crate::db::Database;
 use crate::{
-    db::establish_connection,
     jwt::{build_jwt, Token},
     models::{
         ApiError, ApiResponse, AuthUser, ChangePassword, Item, Params, SignIn, Sync, SyncResponse,
@@ -12,9 +12,8 @@ use rocket::Request;
 use rocket_contrib::json::Json;
 
 #[post("/", data = "<user>")]
-pub fn auth(user: Json<User>) -> ApiResponse<Json<Token>> {
-    let connection = establish_connection();
-    if user.create(&connection) {
+pub fn auth(user: Json<User>, conn: Database) -> ApiResponse<Json<Token>> {
+    if user.create(&*conn) {
         let token = match build_jwt(&user.email) {
             Ok(token) => token,
             Err(_err) => panic!("deal with this"),
@@ -30,15 +29,16 @@ pub fn auth(user: Json<User>) -> ApiResponse<Json<Token>> {
 }
 
 #[post("/change_pw", data = "<change_pw>")]
-pub fn change_pw(_user: AuthUser, change_pw: Json<ChangePassword>) -> ApiResponse<Status> {
+pub fn change_pw(
+    _user: AuthUser,
+    change_pw: Json<ChangePassword>,
+    conn: Database,
+) -> ApiResponse<Status> {
     use crate::schema::users::dsl::{password, users};
-
-    let connection = establish_connection();
-
     diesel::update(users.find(&change_pw.email))
         .filter(password.eq(&change_pw.current_password))
         .set(password.eq(&change_pw.password))
-        .get_result::<User>(&connection)
+        .get_result::<User>(&*conn)
         .expect("Error updating password");
 
     Ok(Status::NoContent)
@@ -66,14 +66,13 @@ pub fn sign_in(sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
 }
 
 #[get("/params/<params_email>")]
-pub fn params(_user: AuthUser, params_email: String) -> ApiResponse<Json<Params>> {
+pub fn params(_user: AuthUser, params_email: String, conn: Database) -> ApiResponse<Json<Params>> {
     use crate::schema::users::dsl::{email, users};
 
-    let connection = establish_connection();
     let result = users
         .filter(email.eq(params_email))
         .limit(1)
-        .load::<User>(&connection)
+        .load::<User>(&*conn)
         .unwrap();
     let user = result.first().unwrap();
 
@@ -81,15 +80,15 @@ pub fn params(_user: AuthUser, params_email: String) -> ApiResponse<Json<Params>
 }
 
 #[post("/sync", data = "<sync>")]
-pub fn sync(_user: AuthUser, sync: Json<Sync>) -> ApiResponse<Json<SyncResponse>> {
+#[allow(unused_variables)]
+pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Json<SyncResponse>> {
     // TODO: Sync the data, handle errors
     use crate::schema::items::dsl::*;
 
     let item = sync.0;
-    let connection = establish_connection();
     let something = diesel::insert_into(items)
         .values(item.items)
-        .get_result::<Item>(&connection)
+        .get_result::<Item>(&*conn)
         .expect("Error creating new user");
 
     Ok(Json(SyncResponse {

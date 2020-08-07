@@ -1,11 +1,19 @@
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use dotenv::dotenv;
-use std::env;
+use rocket::Rocket;
+use rocket_contrib::databases::diesel;
 
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
+embed_migrations!();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url).expect("Error connecting to database")
+#[database("postgres")]
+pub struct Database(diesel::PgConnection);
+
+pub fn run_migrations(rocket: Rocket) -> Result<Rocket, Rocket> {
+    let conn = Database::get_one(&rocket).expect("Couldn't create a database connection.");
+    match embedded_migrations::run(&*conn) {
+        Ok(()) => Ok(rocket),
+        Err(e) => {
+            error!("Failed to run database migrations: {:?}", e);
+            Err(rocket)
+        }
+    }
 }
+

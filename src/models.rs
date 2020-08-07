@@ -14,13 +14,14 @@ use std::io::Cursor;
 
 pub type ApiResponse<T> = Result<T, ApiError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+/// An error with the API.
 pub struct ApiError {
     pub errors: Vec<String>,
 }
 
 impl<'r> Responder<'r> for ApiError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
+    fn respond_to(self, _: &Request<'_>) -> response::Result<'r> {
         Response::build()
             // TODO: Use errors from self
             .sized_body(Cursor::new(format!(
@@ -32,7 +33,7 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
-#[derive(Deserialize, Queryable, Insertable)]
+#[derive(Debug, Clone, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
 pub struct User {
     pub email: String,
