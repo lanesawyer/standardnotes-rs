@@ -1,6 +1,6 @@
-use super::schema::users;
 use crate::diesel::RunQueryDsl;
 use crate::jwt::decode_jwt;
+use crate::schema::users;
 use chrono::{DateTime, Utc};
 use diesel::PgConnection;
 use request::FromRequest;
@@ -43,7 +43,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn save(&self, conn: &PgConnection) -> bool {
+    pub fn create(&self, conn: &PgConnection) -> bool {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
@@ -69,7 +69,7 @@ impl User {
 pub struct ChangePassword {
     pub email: String,
     pub password: String,
-    current_password: String,
+    pub current_password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -89,7 +89,7 @@ pub struct Params {
 pub struct Sync {
     items: Vec<Item>,
     sync_token: String,
-    limit: String,
+    limit: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Queryable)]
@@ -115,7 +115,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
     type Error = ApiKeyError;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-         if let Some(header) = request.headers().get_one("Authorization") {
+        if let Some(header) = request.headers().get_one("Authorization") {
             if !header.starts_with("Bearer ") {
                 return Outcome::Failure((
                     Status::Unauthorized,
@@ -129,17 +129,15 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
                         email: claim.claims.sub,
                     });
                 }
-                Err(e) => println!("{}", e)
+                Err(e) => println!("{}", e),
             }
         } else {
-            println!("missing header");
             return Outcome::Failure((
                 Status::Unauthorized,
                 ApiKeyError("Authorization header missing".to_owned()),
             ));
         }
 
-        println!("something else");
         Outcome::Failure((
             Status::Unauthorized,
             ApiKeyError("Unable to authenticate".to_owned()),

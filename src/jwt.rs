@@ -16,14 +16,14 @@ pub struct Token {
 }
 
 pub fn build_jwt(subject: String) -> String {
-    let my_claims = Claims {
+    let sn_claims = Claims {
         sub: subject,
         iss: "StandardNotes".to_owned(),
         exp: 10000000000,
     };
     let token = match encode(
         &Header::default(),
-        &my_claims,
+        &sn_claims,
         &EncodingKey::from_secret(get_secret().as_bytes()),
     ) {
         Ok(t) => t,
@@ -34,14 +34,14 @@ pub fn build_jwt(subject: String) -> String {
 }
 
 pub fn decode_jwt(token: String) -> Result<TokenData<Claims>, Error> {
-    decode::<Claims>(
-        &token,
-        &DecodingKey::from_secret(get_secret().as_bytes()),
-        &Validation {
-            iss: Some("StandardNotes".to_owned()),
-            ..Default::default()
-        },
-    )
+    let secret = get_secret();
+    let key = DecodingKey::from_secret(secret.as_bytes());
+    let validation = Validation {
+        iss: Some("StandardNotes".to_owned()),
+        ..Default::default()
+    };
+
+    decode::<Claims>(&token, &key, &validation)
 
     // let token_data = match  {
     //     Ok(c) => c,

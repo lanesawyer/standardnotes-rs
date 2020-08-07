@@ -1,11 +1,11 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use]
-extern crate rocket;
-
-#[macro_use]
 extern crate diesel;
 extern crate dotenv;
+extern crate log;
+#[macro_use]
+extern crate rocket;
 
 mod api;
 mod db;
@@ -14,6 +14,8 @@ mod models;
 mod schema;
 
 fn main() {
+    //env_logger::init();
+
     rocket::ignite()
         .mount(
             "/auth",
