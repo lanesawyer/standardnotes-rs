@@ -37,9 +37,9 @@ impl<'r> Responder<'r> for ApiError {
 pub struct User {
     pub email: String,
     password: String,
-    pw_cost: String,
-    pw_nonce: String,
-    version: String,
+    pub pw_cost: String,
+    pub pw_nonce: String,
+    pub version: String,
 }
 
 impl User {
@@ -79,10 +79,10 @@ pub struct SignIn {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Params {
-    pw_cost: String,
-    pw_nonce: String,
-    version: String,
+pub struct Params {
+    pub pw_cost: String,
+    pub pw_nonce: String,
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -115,7 +115,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
     type Error = ApiKeyError;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-        if let Some(header) = request.headers().get_one("Authorization") {
+         if let Some(header) = request.headers().get_one("Authorization") {
             if !header.starts_with("Bearer ") {
                 return Outcome::Failure((
                     Status::Unauthorized,
@@ -123,18 +123,23 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
                 ));
             }
 
-            if let Ok(claim) = decode_jwt(header[7..].to_owned()) {
-                return Outcome::Success(AuthUser {
-                    email: claim.claims.sub,
-                });
+            match decode_jwt(header[7..].to_owned()) {
+                Ok(claim) => {
+                    return Outcome::Success(AuthUser {
+                        email: claim.claims.sub,
+                    });
+                }
+                Err(e) => println!("{}", e)
             }
         } else {
+            println!("missing header");
             return Outcome::Failure((
                 Status::Unauthorized,
                 ApiKeyError("Authorization header missing".to_owned()),
             ));
         }
 
+        println!("something else");
         Outcome::Failure((
             Status::Unauthorized,
             ApiKeyError("Unable to authenticate".to_owned()),

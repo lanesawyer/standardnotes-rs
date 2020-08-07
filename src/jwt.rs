@@ -6,7 +6,7 @@ use std::env;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
-    company: String,
+    iss: String,
     exp: usize,
 }
 
@@ -18,7 +18,7 @@ pub struct Token {
 pub fn build_jwt(subject: String) -> String {
     let my_claims = Claims {
         sub: subject,
-        company: "StandardNotes".to_owned(),
+        iss: "StandardNotes".to_owned(),
         exp: 10000000000,
     };
     let token = match encode(

@@ -2,7 +2,7 @@ use super::schema::users;
 use crate::{
     db::establish_connection,
     jwt::{build_jwt, Token},
-    models::{ApiError, ApiResponse, AuthUser, ChangePassword, SignIn, Sync, User},
+    models::{ApiError, ApiResponse, AuthUser, ChangePassword, SignIn, Sync, User, Params},
 };
 use diesel::prelude::*;
 use jsonwebtoken::errors::ErrorKind;
@@ -43,7 +43,7 @@ pub fn change_pw(user: AuthUser, change_pw: Json<ChangePassword>) -> ApiResponse
 }
 
 #[post("/sign_in", data = "<sign_in>")]
-pub fn sign_in(user: AuthUser, sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
+pub fn sign_in(sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
     // TODO: Check user info, handle errors
 
     Ok(Json(Token {
@@ -52,11 +52,22 @@ pub fn sign_in(user: AuthUser, sign_in: Json<SignIn>) -> ApiResponse<Json<Token>
 }
 
 #[get("/params/<email>")]
-pub fn params(user: AuthUser, email: String) -> ApiResponse<Json<Token>> {
+pub fn params(user: AuthUser, email: String) -> ApiResponse<Json<Params>> {
     // TODO: Retrieve params, handle errors
+    use crate::schema::users::dsl::*;
 
-    Ok(Json(Token {
-        token: build_jwt(email),
+    let connection = establish_connection();
+    let result = users.filter(email.eq(email))
+        .limit(1)
+        .load::<User>(&connection)
+        .unwrap();
+    let user = result.first()
+        .unwrap();
+
+    Ok(Json(Params {
+        pw_cost: user.pw_cost.clone(),
+        pw_nonce: user.pw_nonce.clone(),
+        version: user.version.clone()
     }))
 }
 
