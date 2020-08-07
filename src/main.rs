@@ -10,6 +10,7 @@ extern crate dotenv;
 mod api;
 mod db;
 mod jwt;
+mod models;
 mod schema;
 
 fn main() {
