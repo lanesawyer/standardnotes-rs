@@ -1,7 +1,10 @@
-use jsonwebtoken::errors::Error;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
+use jsonwebtoken::{
+    decode, encode, errors::Error, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
 use serde::{Deserialize, Serialize};
 use std::env;
+
+const ISS: &str = "StandardNotesRustServer";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -15,44 +18,33 @@ pub struct Token {
     pub token: String,
 }
 
-pub fn build_jwt(subject: String) -> String {
-    let sn_claims = Claims {
-        sub: subject,
-        iss: "StandardNotes".to_owned(),
-        exp: 10000000000,
-    };
-    let token = match encode(
+pub fn build_jwt(subject: &String) -> Result<String, Error> {
+    let token = encode(
         &Header::default(),
-        &sn_claims,
+        &Claims {
+            sub: subject.clone(),
+            iss: String::from(ISS),
+            exp: 10000000000,
+        },
         &EncodingKey::from_secret(get_secret().as_bytes()),
-    ) {
-        Ok(t) => t,
-        Err(_) => panic!(), // in practice you would return the error
-    };
+    )?;
 
-    token
+    Ok(token)
 }
 
 pub fn decode_jwt(token: String) -> Result<TokenData<Claims>, Error> {
-    let secret = get_secret();
-    let key = DecodingKey::from_secret(secret.as_bytes());
-    let validation = Validation {
-        iss: Some("StandardNotes".to_owned()),
-        ..Default::default()
-    };
+    let claims = decode::<Claims>(
+        &token,
+        &DecodingKey::from_secret(get_secret().as_bytes()),
+        &Validation {
+            iss: Some(String::from(ISS)),
+            ..Default::default()
+        },
+    )?;
 
-    decode::<Claims>(&token, &key, &validation)
-
-    // let token_data = match  {
-    //     Ok(c) => c,
-    //     Err(err) => match *err.kind() {
-    //         ErrorKind::InvalidToken => panic!("Token is invalid"), // Example on how to handle a specific error
-    //         ErrorKind::InvalidIssuer => panic!("Issuer is invalid"), // Example on how to handle a specific error
-    //         _ => panic!("Some other errors"),
-    //     },
-    // }
+    Ok(claims)
 }
 
 fn get_secret() -> String {
-    env::var("SN_SECRET").expect("SN_SECRET environment variable not provided")
+    env::var("SN_SECRET").expect("SN_SECRET environment variable must be provided")
 }
