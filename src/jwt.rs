@@ -32,9 +32,9 @@ pub fn build_jwt(subject: &String) -> Result<String, Error> {
     Ok(token)
 }
 
-pub fn decode_jwt(token: String) -> Result<TokenData<Claims>, Error> {
+pub fn decode_jwt(token: &str) -> Result<TokenData<Claims>, Error> {
     let claims = decode::<Claims>(
-        &token,
+        token,
         &DecodingKey::from_secret(get_secret().as_bytes()),
         &Validation {
             iss: Some(String::from(ISS)),

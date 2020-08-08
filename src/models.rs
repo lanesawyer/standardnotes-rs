@@ -1,7 +1,7 @@
 use crate::diesel::RunQueryDsl;
 use crate::jwt::decode_jwt;
-use crate::schema::users;
-use chrono::{DateTime, Utc};
+use crate::schema::{users, items};
+// use chrono::{DateTime, Utc};
 use diesel::PgConnection;
 use request::FromRequest;
 use response::Responder;
@@ -47,20 +47,8 @@ impl User {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
-            .expect("Error saving new user");
+            .expect("Error creating new user");
 
-        // use crate::schema::users::dsl::*;
-
-        // let connection = establish_connection();
-        // let results = users
-        //     .limit(5)
-        //     .load::<User>(&connection)
-        //     .expect("Error loading users");
-
-        // println!("Displaying {} users", results.len());
-        // for user in results {
-        //     println!("{}", user.email);
-        // }
         true
     }
 }
@@ -75,7 +63,7 @@ pub struct ChangePassword {
 #[derive(Serialize, Deserialize)]
 pub struct SignIn {
     pub email: String,
-    password: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -97,25 +85,35 @@ impl From<&User> for Params {
 
 #[derive(Serialize, Deserialize)]
 pub struct Sync {
-    items: Vec<Item>,
+    pub items: Vec<Item>,
     sync_token: String,
     limit: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Queryable)]
-struct Item {
+#[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
+#[table_name = "items"]
+pub struct Item {
     uuid: String,
     content: String,
     content_type: String,
     enc_item_key: String,
     deleted: bool,
-    created_at: DateTime<Utc>,
-    updated_at: DateTime<Utc>,
+    created_at: String, // DateTime<Utc>,
+    updated_at: String // DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SyncResponse {
+    pub retrieved_items: Option<Vec<Item>>,
+    pub saved_items: Option<Vec<Item>>,
+    pub unsaved: Option<Vec<Item>>,
+    pub sync_token: Option<String>
 }
 
 #[derive(Debug)]
 pub struct AuthUser {
     email: String,
+    // TODO: Probably need more info for the signed in user
 }
 
 #[derive(Debug)]
@@ -129,11 +127,11 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
             if !header.starts_with("Bearer ") {
                 return Outcome::Failure((
                     Status::Unauthorized,
-                    ApiKeyError("Authorization header malformed".to_owned()),
+                    ApiKeyError(String::from("Authorization header malformed")),
                 ));
             }
 
-            match decode_jwt(header[7..].to_owned()) {
+            match decode_jwt(&header[7..]) {
                 Ok(claim) => {
                     return Outcome::Success(AuthUser {
                         email: claim.claims.sub,
@@ -144,13 +142,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
         } else {
             return Outcome::Failure((
                 Status::Unauthorized,
-                ApiKeyError("Authorization header missing".to_owned()),
+                ApiKeyError(String::from("Authorization header missing")),
             ));
         }
 
         Outcome::Failure((
             Status::Unauthorized,
-            ApiKeyError("Unable to authenticate".to_owned()),
+            ApiKeyError(String::from("Unable to authenticate")),
         ))
     }
 }

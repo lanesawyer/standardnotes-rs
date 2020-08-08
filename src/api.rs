@@ -1,7 +1,7 @@
 use crate::{
     db::establish_connection,
     jwt::{build_jwt, Token},
-    models::{ApiError, ApiResponse, AuthUser, ChangePassword, Params, SignIn, Sync, User},
+    models::{ApiError, ApiResponse, AuthUser, ChangePassword, Params, SignIn, Sync, User, Item, SyncResponse},
 };
 use diesel::prelude::*;
 use rocket::http::Status;
@@ -13,12 +13,12 @@ pub fn auth(user: Json<User>) -> ApiResponse<Json<Token>> {
     if user.create(&connection) {
         let token = match build_jwt(&user.email) {
             Ok(token) => token,
-            Err(err) => panic!("deal with this"),
+            Err(_err) => panic!("deal with this"),
         };
 
         Ok(Json(Token { token }))
     } else {
-        // TODO: Get those errors to be returned in the response
+        // TODO: Get these errors to be returned in the response
         Err(ApiError {
             errors: vec![String::from("Unable to create user account")],
         })
@@ -42,10 +42,20 @@ pub fn change_pw(_user: AuthUser, change_pw: Json<ChangePassword>) -> ApiRespons
 
 #[post("/sign_in", data = "<sign_in>")]
 pub fn sign_in(sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
-    // TODO: Check user info, handle errors
-    let token = match build_jwt(&sign_in.email) {
+    use crate::schema::users::dsl::{email, users, password};
+
+    let connection = establish_connection();
+    let result = users
+        .filter(email.eq(&sign_in.email))
+        .filter(password.eq(&sign_in.password))
+        .limit(1)
+        .load::<User>(&connection)
+        .unwrap();
+    let user = result.first().unwrap();
+
+    let token = match build_jwt(&user.email) {
         Ok(token) => token,
-        Err(err) => panic!("deal with this"),
+        Err(_err) => panic!("deal with this"),
     };
 
     Ok(Json(Token { token }))
@@ -67,14 +77,21 @@ pub fn params(_user: AuthUser, params_email: String) -> ApiResponse<Json<Params>
 }
 
 #[post("/sync", data = "<sync>")]
-pub fn sync(_user: AuthUser, sync: Json<Sync>) -> ApiResponse<Json<Token>> {
+pub fn sync(_user: AuthUser, sync: Json<Sync>) -> ApiResponse<Json<SyncResponse>> {
     // TODO: Sync the data, handle errors
-    let token = match build_jwt(&String::from("what")) {
-        Ok(token) => token,
-        Err(err) => panic!("deal with this"),
-    };
+    use crate::schema::items::dsl::*;
 
-    Ok(Json(Token {
-        token
+    let item = sync.0;
+    let connection = establish_connection();
+    let something = diesel::insert_into(items)
+        .values(item.items)
+        .get_result::<Item>(&connection)
+        .expect("Error creating new user");
+
+    Ok(Json(SyncResponse {
+        saved_items: Some(vec![something]),
+        retrieved_items: None,
+        unsaved: None,
+        sync_token: None
     }))
 }

@@ -4,6 +4,6 @@ CREATE TABLE items (
     content_type TEXT NOT NULL,
     enc_item_key TEXT NOT NULL,
     deleted BOOLEAN NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 )
