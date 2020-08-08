@@ -18,11 +18,11 @@ pub struct Token {
     pub token: String,
 }
 
-pub fn build_jwt(subject: &String) -> Result<String, Error> {
+pub fn build_jwt(subject: &str) -> Result<String, Error> {
     let token = encode(
         &Header::default(),
         &Claims {
-            sub: subject.clone(),
+            sub: subject.to_string(),
             iss: String::from(ISS),
             exp: 10000000000,
         },

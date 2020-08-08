@@ -3,7 +3,6 @@
     missing_debug_implementations,
     bare_trait_objects,
     anonymous_parameters,
-    elided_lifetimes_in_paths,
     unused_imports
 )]
 

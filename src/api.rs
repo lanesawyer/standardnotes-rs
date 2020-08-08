@@ -45,15 +45,14 @@ pub fn change_pw(
 }
 
 #[post("/sign_in", data = "<sign_in>")]
-pub fn sign_in(sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
+pub fn sign_in(sign_in: Json<SignIn>, conn: Database) -> ApiResponse<Json<Token>> {
     use crate::schema::users::dsl::{email, password, users};
 
-    let connection = establish_connection();
     let result = users
         .filter(email.eq(&sign_in.email))
         .filter(password.eq(&sign_in.password))
         .limit(1)
-        .load::<User>(&connection)
+        .load::<User>(&*conn)
         .unwrap();
     let user = result.first().unwrap();
 

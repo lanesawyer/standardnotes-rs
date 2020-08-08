@@ -16,4 +16,3 @@ pub fn run_migrations(rocket: Rocket) -> Result<Rocket, Rocket> {
         }
     }
 }
-
