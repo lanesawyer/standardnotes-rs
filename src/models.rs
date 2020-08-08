@@ -1,6 +1,6 @@
 use crate::diesel::RunQueryDsl;
 use crate::jwt::decode_jwt;
-use crate::schema::{users, items};
+use crate::schema::{items, users};
 // use chrono::{DateTime, Utc};
 use diesel::PgConnection;
 use request::FromRequest;
@@ -24,8 +24,8 @@ impl<'r> Responder<'r> for ApiError {
         Response::build()
             // TODO: Use errors from self
             .sized_body(Cursor::new(format!(
-                "{{errors:[{}]}}",
-                "replace with errors"
+                "{{\"errors\":[\"{}\"]}}",
+                self.errors.join(", ")
             )))
             .header(ContentType::new("application", "json"))
             .ok()
@@ -99,7 +99,7 @@ pub struct Item {
     enc_item_key: String,
     deleted: bool,
     created_at: String, // DateTime<Utc>,
-    updated_at: String // DateTime<Utc>,
+    updated_at: String, // DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -107,7 +107,7 @@ pub struct SyncResponse {
     pub retrieved_items: Option<Vec<Item>>,
     pub saved_items: Option<Vec<Item>>,
     pub unsaved: Option<Vec<Item>>,
-    pub sync_token: Option<String>
+    pub sync_token: Option<String>,
 }
 
 #[derive(Debug)]
@@ -132,9 +132,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
             }
 
             match decode_jwt(&header[7..]) {
-                Ok(claim) => {
+                Ok(token) => {
                     return Outcome::Success(AuthUser {
-                        email: claim.claims.sub,
+                        email: token.claims.sub,
                     });
                 }
                 Err(e) => println!("{}", e),

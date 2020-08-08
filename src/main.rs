@@ -22,5 +22,6 @@ fn main() {
             routes![api::auth, api::change_pw, api::sign_in, api::params],
         )
         .mount("/items", routes![api::sync])
+        .register(catchers![api::bad_request, api::not_found])
         .launch();
 }

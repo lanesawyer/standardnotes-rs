@@ -33,7 +33,7 @@ pub fn build_jwt(subject: &String) -> Result<String, Error> {
 }
 
 pub fn decode_jwt(token: &str) -> Result<TokenData<Claims>, Error> {
-    let claims = decode::<Claims>(
+    let token = decode::<Claims>(
         token,
         &DecodingKey::from_secret(get_secret().as_bytes()),
         &Validation {
@@ -42,7 +42,7 @@ pub fn decode_jwt(token: &str) -> Result<TokenData<Claims>, Error> {
         },
     )?;
 
-    Ok(claims)
+    Ok(token)
 }
 
 fn get_secret() -> String {

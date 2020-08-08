@@ -1,10 +1,14 @@
 use crate::{
     db::establish_connection,
     jwt::{build_jwt, Token},
-    models::{ApiError, ApiResponse, AuthUser, ChangePassword, Params, SignIn, Sync, User, Item, SyncResponse},
+    models::{
+        ApiError, ApiResponse, AuthUser, ChangePassword, Item, Params, SignIn, Sync, SyncResponse,
+        User,
+    },
 };
 use diesel::prelude::*;
 use rocket::http::Status;
+use rocket::Request;
 use rocket_contrib::json::Json;
 
 #[post("/", data = "<user>")]
@@ -42,7 +46,7 @@ pub fn change_pw(_user: AuthUser, change_pw: Json<ChangePassword>) -> ApiRespons
 
 #[post("/sign_in", data = "<sign_in>")]
 pub fn sign_in(sign_in: Json<SignIn>) -> ApiResponse<Json<Token>> {
-    use crate::schema::users::dsl::{email, users, password};
+    use crate::schema::users::dsl::{email, password, users};
 
     let connection = establish_connection();
     let result = users
@@ -92,6 +96,20 @@ pub fn sync(_user: AuthUser, sync: Json<Sync>) -> ApiResponse<Json<SyncResponse>
         saved_items: Some(vec![something]),
         retrieved_items: None,
         unsaved: None,
-        sync_token: None
+        sync_token: None,
     }))
+}
+
+#[catch(400)]
+pub fn bad_request(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
+    Err(ApiError {
+        errors: vec![String::from("Bad request")],
+    })
+}
+
+#[catch(404)]
+pub fn not_found(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
+    Err(ApiError {
+        errors: vec![String::from("Not found")],
+    })
 }
