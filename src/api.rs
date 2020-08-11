@@ -16,7 +16,7 @@ pub fn auth(user: Json<User>, conn: Database) -> ApiResponse<Json<Token>> {
     if user.create(&*conn) {
         let token = match build_jwt(&user.email) {
             Ok(token) => token,
-            Err(_err) => return Err(build_api_error("Error building JWT"))
+            Err(_err) => return Err(build_api_error("Error building JWT")),
         };
 
         Ok(Json(Token { token }))
@@ -79,22 +79,21 @@ pub fn params(_user: AuthUser, params_email: String, conn: Database) -> ApiRespo
 #[post("/sync", data = "<sync>")]
 #[allow(unused_variables)]
 pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Json<SyncResponse>> {
-    use crate::schema::items::dsl::{items};
+    use crate::schema::items::dsl::items;
 
     let item = sync.0;
     match diesel::insert_into(items)
         .values(item.items)
-        .get_result::<Item>(&*conn) {
-            Ok(item) => {
-                Ok(Json(SyncResponse {
-                    saved_items: Some(vec![item]),
-                    retrieved_items: None,
-                    unsaved: None,
-                    sync_token: None,
-                }))
-            },
-            Err(_) => Err(build_api_error("Error syncing item"))
-        }
+        .get_result::<Item>(&*conn)
+    {
+        Ok(item) => Ok(Json(SyncResponse {
+            saved_items: Some(vec![item]),
+            retrieved_items: None,
+            unsaved: None,
+            sync_token: None,
+        })),
+        Err(_) => Err(build_api_error("Error syncing item")),
+    }
 }
 
 #[catch(400)]
