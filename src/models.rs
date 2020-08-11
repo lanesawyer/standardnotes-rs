@@ -2,7 +2,7 @@ use crate::diesel::RunQueryDsl;
 use crate::jwt::decode_jwt;
 use crate::schema::{items, users};
 // use chrono::{DateTime, Utc};
-use diesel::PgConnection;
+use diesel::pg::Pg;
 use request::FromRequest;
 use response::Responder;
 use rocket::{
@@ -14,13 +14,14 @@ use std::io::Cursor;
 
 pub type ApiResponse<T> = Result<T, ApiError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+/// An error with the API.
 pub struct ApiError {
     pub errors: Vec<String>,
 }
 
 impl<'r> Responder<'r> for ApiError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
+    fn respond_to(self, _: &Request<'_>) -> response::Result<'r> {
         Response::build()
             // TODO: Use errors from self
             .sized_body(Cursor::new(format!(
@@ -32,7 +33,7 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
-#[derive(Deserialize, Queryable, Insertable)]
+#[derive(Debug, Clone, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
 pub struct User {
     pub email: String,
@@ -43,12 +44,14 @@ pub struct User {
 }
 
 impl User {
-    pub fn create(&self, conn: &PgConnection) -> bool {
+    pub fn create<C>(&self, conn: &C) -> bool
+    where
+        C: diesel::Connection<Backend = Pg>,
+    {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
             .expect("Error creating new user");
-
         true
     }
 }

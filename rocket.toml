@@ -1,0 +1,4 @@
+[global.databases]
+# although this is set here, it can be overriden using the `ROCKET_DATABASES` environment
+# variable
+postgres = {url="postgres://localhost"}

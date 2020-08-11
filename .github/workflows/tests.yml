@@ -1,0 +1,28 @@
+on: [push, pull_request]
+
+name: CI
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        name: Cache dependencies
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          components: rustfmt, clippy
+          override: true
+      - name: Run tests
+        run: cargo test
+      - name: Lint with Clippy
+        run: cargo clippy -- -D warnings
+      - name: Check code formatting
+        run: cargo fmt --all -- --check
