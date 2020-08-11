@@ -4,7 +4,8 @@ use jsonwebtoken::{
 use serde::{Deserialize, Serialize};
 use std::env;
 
-const ISS: &str = "StandardNotesRustServer";
+const ISSUER: &str = "StandardNotesRustServer";
+const EXPIRATION_TIME: usize = 10000000000;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -23,8 +24,8 @@ pub fn build_jwt(subject: &str) -> Result<String, Error> {
         &Header::default(),
         &Claims {
             sub: subject.to_string(),
-            iss: String::from(ISS),
-            exp: 10000000000,
+            iss: String::from(ISSUER),
+            exp: EXPIRATION_TIME,
         },
         &EncodingKey::from_secret(get_secret().as_bytes()),
     )?;
@@ -37,7 +38,7 @@ pub fn decode_jwt(token: &str) -> Result<TokenData<Claims>, Error> {
         token,
         &DecodingKey::from_secret(get_secret().as_bytes()),
         &Validation {
-            iss: Some(String::from(ISS)),
+            iss: Some(String::from(ISSUER)),
             ..Default::default()
         },
     )?;
@@ -47,4 +48,34 @@ pub fn decode_jwt(token: &str) -> Result<TokenData<Claims>, Error> {
 
 fn get_secret() -> String {
     env::var("SN_SECRET").expect("SN_SECRET environment variable must be provided")
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn jwt_encodes_and_decodes_correctly() {
+        std::env::set_var("SN_SECRET", "test_secret");
+
+        let token = super::build_jwt("test@test.com").unwrap();
+        let decoded_token = super::decode_jwt(&token).unwrap();
+
+        assert_eq!(decoded_token.claims.sub, "test@test.com");
+        assert_eq!(decoded_token.claims.iss, super::ISSUER);
+        assert_eq!(decoded_token.claims.exp, super::EXPIRATION_TIME);
+    }
+
+    #[test]
+    fn get_secret_returns_env_var() {
+        std::env::set_var("SN_SECRET", "test_secret");
+
+        let secret = super::get_secret();
+
+        assert_eq!(secret, "test_secret");
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_secret_panics_without_env_var() {
+        super::get_secret();
+    }
 }
