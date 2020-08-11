@@ -76,6 +76,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn get_secret_panics_without_env_var() {
+        std::env::remove_var("SN_SECRET");
         super::get_secret();
     }
 }
