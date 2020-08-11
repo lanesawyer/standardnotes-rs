@@ -30,7 +30,6 @@ mod models;
 mod schema;
 
 fn main() {
-    //env_logger::init();
     dotenv().ok();
 
     rocket::ignite()
@@ -41,6 +40,11 @@ fn main() {
             routes![api::auth, api::change_pw, api::sign_in, api::params],
         )
         .mount("/items", routes![api::sync])
-        .register(catchers![api::bad_request, api::not_found])
+        .register(catchers![
+            api::bad_request,
+            api::unauthorized,
+            api::not_found,
+            api::server_error
+        ])
         .launch();
 }

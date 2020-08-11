@@ -16,15 +16,13 @@ pub fn auth(user: Json<User>, conn: Database) -> ApiResponse<Json<Token>> {
     if user.create(&*conn) {
         let token = match build_jwt(&user.email) {
             Ok(token) => token,
-            Err(_err) => panic!("deal with this"),
+            Err(_err) => return Err(build_api_error("Error building JWT"))
         };
 
         Ok(Json(Token { token }))
     } else {
         // TODO: Get these errors to be returned in the response
-        Err(ApiError {
-            errors: vec![String::from("Unable to create user account")],
-        })
+        Err(build_api_error("Unable to create user account"))
     }
 }
 
@@ -58,7 +56,7 @@ pub fn sign_in(sign_in: Json<SignIn>, conn: Database) -> ApiResponse<Json<Token>
 
     let token = match build_jwt(&user.email) {
         Ok(token) => token,
-        Err(_err) => panic!("deal with this"),
+        Err(_err) => return Err(build_api_error("Error building JWT")),
     };
 
     Ok(Json(Token { token }))
@@ -81,33 +79,46 @@ pub fn params(_user: AuthUser, params_email: String, conn: Database) -> ApiRespo
 #[post("/sync", data = "<sync>")]
 #[allow(unused_variables)]
 pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Json<SyncResponse>> {
-    // TODO: Sync the data, handle errors
-    use crate::schema::items::dsl::*;
+    use crate::schema::items::dsl::{items};
 
     let item = sync.0;
-    let something = diesel::insert_into(items)
+    match diesel::insert_into(items)
         .values(item.items)
-        .get_result::<Item>(&*conn)
-        .expect("Error creating new user");
-
-    Ok(Json(SyncResponse {
-        saved_items: Some(vec![something]),
-        retrieved_items: None,
-        unsaved: None,
-        sync_token: None,
-    }))
+        .get_result::<Item>(&*conn) {
+            Ok(item) => {
+                Ok(Json(SyncResponse {
+                    saved_items: Some(vec![item]),
+                    retrieved_items: None,
+                    unsaved: None,
+                    sync_token: None,
+                }))
+            },
+            Err(_) => Err(build_api_error("Error syncing item"))
+        }
 }
 
 #[catch(400)]
 pub fn bad_request(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(ApiError {
-        errors: vec![String::from("Bad request")],
-    })
+    Err(build_api_error("Bad request"))
+}
+
+#[catch(401)]
+pub fn unauthorized(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
+    Err(build_api_error("Unauthorized"))
 }
 
 #[catch(404)]
 pub fn not_found(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(ApiError {
-        errors: vec![String::from("Not found")],
-    })
+    Err(build_api_error("Not found"))
+}
+
+#[catch(500)]
+pub fn server_error(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
+    Err(build_api_error("Server error"))
+}
+
+fn build_api_error(error_message: &str) -> ApiError {
+    ApiError {
+        errors: vec![String::from(error_message)],
+    }
 }
