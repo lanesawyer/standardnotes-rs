@@ -2,7 +2,7 @@ use crate::diesel::RunQueryDsl;
 use crate::jwt::decode_jwt;
 use crate::schema::{items, users};
 // use chrono::{DateTime, Utc};
-use diesel::PgConnection;
+use diesel::pg::Pg;
 use request::FromRequest;
 use response::Responder;
 use rocket::{
@@ -44,12 +44,14 @@ pub struct User {
 }
 
 impl User {
-    pub fn create(&self, conn: &PgConnection) -> bool {
+    pub fn create<C>(&self, conn: &C) -> bool
+    where
+        C: diesel::Connection<Backend = Pg>,
+    {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
             .expect("Error creating new user");
-
         true
     }
 }
