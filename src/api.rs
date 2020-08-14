@@ -84,7 +84,6 @@ pub fn params(
 // TODO: Set headers for OPTIONS response at some point
 #[options("/params/<_params_email>")]
 pub fn params_options(_params_email: String) -> ApiResponse<Status> {
-
     Ok(Status::NoContent)
 }
 

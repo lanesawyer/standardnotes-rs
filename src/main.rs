@@ -37,7 +37,13 @@ fn main() {
         .attach(AdHoc::on_attach("Database Migrations", db::run_migrations))
         .mount(
             "/auth",
-            routes![api::auth, api::change_pw, api::sign_in, api::params, api::params_options],
+            routes![
+                api::auth,
+                api::change_pw,
+                api::sign_in,
+                api::params,
+                api::params_options
+            ],
         )
         .mount("/items", routes![api::sync])
         .register(catchers![
