@@ -37,8 +37,8 @@ impl<'r> Responder<'r> for ApiError {
 #[table_name = "users"]
 pub struct User {
     pub email: String,
-    password: String,
-    pub pw_cost: String,
+    pub password: String,
+    pub pw_cost: i64,
     pub pw_nonce: String,
     pub version: String,
 }
@@ -72,7 +72,7 @@ pub struct SignIn {
 
 #[derive(Serialize, Deserialize)]
 pub struct Params {
-    pub pw_cost: String,
+    pub pw_cost: i64,
     pub pw_nonce: String,
     pub version: String,
 }

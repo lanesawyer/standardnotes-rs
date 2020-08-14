@@ -14,10 +14,13 @@ table! {
     users (email) {
         email -> Text,
         password -> Text,
-        pw_cost -> Text,
+        pw_cost -> Int8,
         pw_nonce -> Text,
         version -> Text,
     }
 }
 
-allow_tables_to_appear_in_same_query!(items, users,);
+allow_tables_to_appear_in_same_query!(
+    items,
+    users,
+);

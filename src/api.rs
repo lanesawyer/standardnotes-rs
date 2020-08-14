@@ -62,18 +62,30 @@ pub fn sign_in(sign_in: Json<SignIn>, conn: Database) -> ApiResponse<Json<Token>
     Ok(Json(Token { token }))
 }
 
-#[get("/params/<params_email>")]
-pub fn params(_user: AuthUser, params_email: String, conn: Database) -> ApiResponse<Json<Params>> {
+#[get("/params?<email>&<api>")]
+pub fn params(
+    _user: AuthUser,
+    conn: Database,
+    email: String,
+    api: String,
+) -> ApiResponse<Json<Params>> {
     use crate::schema::users::dsl::{email, users};
 
     let result = users
-        .filter(email.eq(params_email))
+        .filter(email.eq(email))
         .limit(1)
         .load::<User>(&*conn)
         .unwrap();
     let user = result.first().unwrap();
 
     Ok(Json(Params::from(user)))
+}
+
+// TODO: Set headers for OPTIONS response at some point
+#[options("/params/<params_email>")]
+pub fn params_options(params_email: String) -> ApiResponse<Status> {
+
+    Ok(Status::NoContent)
 }
 
 #[post("/sync", data = "<sync>")]
