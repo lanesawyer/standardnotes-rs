@@ -80,7 +80,7 @@ pub struct Params {
 impl From<&User> for Params {
     fn from(user: &User) -> Self {
         Params {
-            pw_cost: user.pw_cost.clone(),
+            pw_cost: user.pw_cost,
             pw_nonce: user.pw_nonce.clone(),
             version: user.version.clone(),
         }
