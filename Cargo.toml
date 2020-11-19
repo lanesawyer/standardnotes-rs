@@ -9,7 +9,7 @@ chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4.4", features = ["postgres", "chrono"] }
 diesel_migrations = "1.4.0"
 dotenv = "0.15.0"
-env_logger = "0.7.1"
+env_logger = "0.8.2"
 jsonwebtoken = "7"
 log = "0.4.0"
 rocket = "0.4.5"
