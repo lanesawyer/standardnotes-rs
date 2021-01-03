@@ -1037,9 +1037,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_contrib"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3946ca815127041d8f64455561031d058c22ae1b135251502c5ea523cf9e14b"
+checksum = "9465babd59cfb360669b60431db510f3dc3268d51ccd69fc9264e626681e596a"
 dependencies = [
  "diesel",
  "log 0.4.11",
@@ -1053,9 +1053,9 @@ dependencies = [
 
 [[package]]
 name = "rocket_contrib_codegen"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbc1c93c930af81f5097b8fd3cbc245a8b47c906a45a30c167cb3df0cd7ac404"
+checksum = "fd30b50723c98c7ba6eea01cc5416e273397fa09ac45569538758ae24590dd7d"
 dependencies = [
  "devise",
  "quote 0.6.13",
