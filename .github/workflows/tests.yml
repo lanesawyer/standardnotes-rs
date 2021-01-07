@@ -18,6 +18,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
+          toolchain: nightly
           components: rustfmt, clippy
           override: true
       - name: Run tests
