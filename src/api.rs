@@ -102,7 +102,6 @@ pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Js
 
             // these items are new or have been modified since last sync and should be merged or created locally.
 
-
             Ok(Json(SyncResponse {
                 saved_items: Some(sync.items),
                 retrieved_items: None,
