@@ -20,6 +20,9 @@ extern crate diesel_migrations;
 #[macro_use]
 extern crate log;
 
+#[cfg(test)]
+mod tests;
+
 use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 
@@ -29,9 +32,8 @@ mod jwt;
 mod models;
 mod schema;
 
-fn main() {
-    dotenv().ok();
-
+/// Makes a rocket that is ready for launch
+pub fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .attach(db::Database::fairing())
         .attach(AdHoc::on_attach("Database Migrations", db::run_migrations))
@@ -52,5 +54,10 @@ fn main() {
             api::not_found,
             api::server_error
         ])
-        .launch();
+}
+
+fn main() {
+    dotenv().ok();
+
+    rocket().launch();
 }
