@@ -3,7 +3,7 @@ use rocket::http::{ContentType, Status};
 use rocket::local::Client;
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_auth() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -17,7 +17,7 @@ fn test_auth() {
 }
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_change_pw() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -31,7 +31,7 @@ fn test_change_pw() {
 }
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_sign_in() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -45,7 +45,7 @@ fn test_sign_in() {
 }
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_params() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -59,7 +59,7 @@ fn test_params() {
 }
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_param_options() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -73,7 +73,7 @@ fn test_param_options() {
 }
 
 #[test]
-#[ignore="need to get a test db up and running"]
+#[ignore = "need to get a test db up and running"]
 fn test_items_sync() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -87,7 +87,7 @@ fn test_items_sync() {
 }
 
 #[test]
-#[ignore="WORKS locally, but need to get a test db up and running"]
+#[ignore = "WORKS locally, but need to get a test db up and running"]
 fn test_bad_request() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -96,11 +96,14 @@ fn test_bad_request() {
 
     assert_eq!(response.status(), Status::BadRequest);
     assert_eq!(response.content_type(), Some(ContentType::JSON));
-    assert_eq!(response.body_string(), Some("{\"errors\":[\"Bad request\"]}".into()));
+    assert_eq!(
+        response.body_string(),
+        Some("{\"errors\":[\"Bad request\"]}".into())
+    );
 }
 
 #[test]
-#[ignore="WORKS locally, but need to get a test db up and running"]
+#[ignore = "WORKS locally, but need to get a test db up and running"]
 fn test_unauthorized() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -109,11 +112,14 @@ fn test_unauthorized() {
 
     assert_eq!(response.status(), Status::Unauthorized);
     assert_eq!(response.content_type(), Some(ContentType::JSON));
-    assert_eq!(response.body_string(), Some("{\"errors\":[\"Unauthorized\"]}".into()));
+    assert_eq!(
+        response.body_string(),
+        Some("{\"errors\":[\"Unauthorized\"]}".into())
+    );
 }
 
 #[test]
-#[ignore="WORKS locally, but need to get a test db up and running"]
+#[ignore = "WORKS locally, but need to get a test db up and running"]
 fn test_not_found() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
@@ -122,11 +128,14 @@ fn test_not_found() {
 
     assert_eq!(response.status(), Status::NotFound);
     assert_eq!(response.content_type(), Some(ContentType::JSON));
-    assert_eq!(response.body_string(), Some("{\"errors\":[\"Not found\"]}".into()));
+    assert_eq!(
+        response.body_string(),
+        Some("{\"errors\":[\"Not found\"]}".into())
+    );
 }
 
 #[test]
-#[ignore="need to sign in and then post data that makes it throw up"]
+#[ignore = "need to sign in and then post data that makes it throw up"]
 fn test_server_error() {
     let rocket = rocket();
     let client = Client::new(rocket).expect("valid rocket instance");
