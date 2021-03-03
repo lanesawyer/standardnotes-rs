@@ -92,17 +92,24 @@ pub fn params_options(_params_email: String) -> ApiResponse<Status> {
 pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Json<SyncResponse>> {
     use crate::schema::items::dsl::items;
 
-    let item = sync.0;
+    let sync = sync.into_inner();
     match diesel::insert_into(items)
-        .values(item.items)
+        .values(&sync.items)
         .get_result::<Item>(&*conn)
     {
-        Ok(item) => Ok(Json(SyncResponse {
-            saved_items: Some(vec![item]),
-            retrieved_items: None,
-            unsaved: None,
-            sync_token: None,
-        })),
+        Ok(item) => {
+            let hi = "wat";
+
+            // these items are new or have been modified since last sync and should be merged or created locally.
+
+
+            Ok(Json(SyncResponse {
+                saved_items: Some(sync.items),
+                retrieved_items: None,
+                unsaved: None,
+                sync_token: None,
+            }))
+        }
         Err(_) => Err(build_api_error("Error syncing item")),
     }
 }
@@ -129,6 +136,6 @@ pub fn server_error(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
 
 fn build_api_error(error_message: &str) -> ApiError {
     ApiError {
-        errors: vec![String::from(error_message)],
+        errors: vec![error_message.into()],
     }
 }
