@@ -6,15 +6,8 @@ services:
         ports:
             - 5432:5432
         volumes:
-            - ./db-data/:/var/lib/postgresql/data/
-        env_file:
-        - .env
-        healthcheck:
-            test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
-            timeout: 45s
-            interval: 10s
-            retries: 10
-        restart: always
+            - ./db-data:/var/lib/postgresql/data/
+        env_file: .env
     server:
         build: .
         volumes: 
@@ -28,3 +21,5 @@ services:
             DB_USER: postgres
             DB_DATABASE: notesdb
             DB_PASSWORD: 63eaQB9wtLqmNBpg
+        depends_on:
+            - db
