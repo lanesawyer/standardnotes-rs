@@ -1,20 +1,24 @@
-version: "3.8"
+version: "3.9"
 
-services: 
-    postgres:
-        image: postgres:12
-        volumes: 
-            - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-        environment:
-            POSTGRES_PASSWORD: 63eaQB9wtLqmNBpg
-            POSTGRES_DB: notesdb
+services:
+    db:
+        image: postgres:13.2
+        ports:
+            - 5432:5432
+        volumes:
+            - ./db-data/:/var/lib/postgresql/data/
+        env_file:
+        - .env
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+            timeout: 45s
+            interval: 10s
+            retries: 10
+        restart: always
     server:
-        build:
-            context: .
-            dockerfile: Dockerfile
+        build: .
         volumes: 
-            - /usr/app/node_modules
-            - ./:/usr/app
+            - .:/standardnotes-rs
         ports: 
             - 3000:3000
         environment: 
