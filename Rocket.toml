@@ -1,3 +1,0 @@
-[global.databases]
-# This can be overriden using the `ROCKET_DATABASES` environment variable
-postgres = {url="postgres://standardnotes:password@db/standardnotes"}
