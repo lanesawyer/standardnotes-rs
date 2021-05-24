@@ -12,7 +12,7 @@ dotenv = "0.15.0"
 env_logger = "0.8.3"
 jsonwebtoken = "7"
 log = "0.4.14"
-rocket = "0.4.9"
+rocket = "0.4.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 
