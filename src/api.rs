@@ -2,8 +2,8 @@ use crate::db::Database;
 use crate::{
     jwt::{build_jwt, Token},
     models::{
-        ApiError, ApiResponse, AuthUser, ChangePassword, Item, Params, SignIn, Sync, SyncResponse,
-        User,
+        ApiError, ApiResponse, AuthUser, ChangePassword, CreateUser, Item, Params, SignIn, Sync,
+        SyncResponse, User,
     },
 };
 use diesel::prelude::*;
@@ -11,14 +11,23 @@ use rocket::http::Status;
 use rocket::Request;
 use rocket_contrib::json::Json;
 
-#[post("/", data = "<user>")]
-pub fn auth(user: Json<User>, conn: Database) -> ApiResponse<Json<Token>> {
+#[post("/", data = "<create_user>")]
+pub fn auth(create_user: Json<CreateUser>, conn: Database) -> ApiResponse<Json<Token>> {
+    // TODO: Better conversion
+    let user = User {
+        email: create_user.email.clone(),
+        password: create_user.password.clone(),
+        pw_cost: 100,
+        pw_nonce: create_user.pw_nonce.clone(),
+        version: create_user.version.clone(),
+    };
     if user.create(&*conn) {
         let token = match build_jwt(&user.email) {
             Ok(token) => token,
             Err(_err) => return Err(build_api_error("Error building JWT")),
         };
 
+        // TODO: Fix response to match spec
         Ok(Json(Token { token }))
     } else {
         // TODO: Get these errors to be returned in the response

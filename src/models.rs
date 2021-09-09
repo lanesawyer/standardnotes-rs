@@ -58,6 +58,19 @@ impl User {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct CreateUser {
+    pub api: String,
+    pub created: String,
+    pub email: String,
+    pub ephemeral: bool,
+    pub identifier: String,
+    pub origination: String,
+    pub password: String,
+    pub pw_nonce: String,
+    pub version: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct ChangePassword {
     pub email: String,
     pub password: String,
