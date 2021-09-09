@@ -1,3 +1,3 @@
 [global.databases]
 # This can be overriden using the `ROCKET_DATABASES` environment variable
-postgres = {url="postgresql://postgres:Pariveda1@localhost/standardnotes"}
+postgres = { url="postgresql://standardnotes:password@localhost/standardnotes" }
