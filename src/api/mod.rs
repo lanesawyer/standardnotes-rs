@@ -1,9 +1,4 @@
-use crate::{
-    models::{
-        ApiError, ApiResponse,
-        SyncResponse,
-    },
-};
+use crate::models::{ApiError, ApiResponse, SyncResponse};
 use rocket::Request;
 use rocket_contrib::json::Json;
 

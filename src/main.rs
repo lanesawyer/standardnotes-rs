@@ -41,10 +41,10 @@ pub fn rocket() -> rocket::Rocket {
             "/auth",
             routes![
                 api::auth::create_user,
-                api::auth::change_pw,
                 api::auth::sign_in,
                 api::auth::params,
-                api::auth::params_options
+                api::auth::params_options,
+                api::auth::change_pw
             ],
         )
         .mount("/items", routes![api::sync::sync])

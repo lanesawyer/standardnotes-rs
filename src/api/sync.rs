@@ -1,11 +1,6 @@
 use crate::api::build_api_error;
 use crate::db::Database;
-use crate::{
-    models::{
-        ApiResponse, AuthUser, Item, Sync,
-        SyncResponse,
-    },
-};
+use crate::models::{ApiResponse, AuthUser, Item, Sync, SyncResponse};
 use diesel::prelude::*;
 use rocket_contrib::json::Json;
 

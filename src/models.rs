@@ -106,7 +106,7 @@ pub struct ParamsResponse {
 impl From<&User> for ParamsResponse {
     fn from(user: &User) -> Self {
         ParamsResponse {
-            identifier: user.email.clone(),
+            identifier: user.email.clone(), // TODO: Switch to identifier
             pw_nonce: user.pw_nonce.clone(),
             version: user.version.clone(),
         }
