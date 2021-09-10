@@ -84,6 +84,12 @@ pub fn sign_in(conn: Database, sign_in: Json<SignIn>) -> ApiResponse<Json<AuthRe
     }))
 }
 
+// TODO: Session stuff
+#[post("/sign_out")]
+pub fn sign_out(conn: Database) -> ApiResponse<Status> {
+    Ok(Status::NoContent)
+}
+
 #[get("/params?<_email>&<_api>")]
 pub fn params(
     _user: AuthUser,

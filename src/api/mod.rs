@@ -3,6 +3,7 @@ use rocket::Request;
 use rocket_contrib::json::Json;
 
 pub mod auth;
+pub mod session;
 pub mod sync;
 
 #[catch(400)]
