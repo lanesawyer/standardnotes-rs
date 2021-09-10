@@ -26,7 +26,7 @@ pub fn create_user(
     };
 
     if user.create(&*conn) {
-        let token = match build_jwt(&user.email) {
+        let _token = match build_jwt(&user.email) {
             Ok(token) => token,
             Err(_err) => return Err(build_api_error("Error building JWT")),
         };
@@ -63,7 +63,7 @@ pub fn sign_in(conn: Database, sign_in: Json<SignIn>) -> ApiResponse<Json<AuthRe
         .unwrap();
     let user = result.first().unwrap();
 
-    let token = match build_jwt(&user.email) {
+    let _token = match build_jwt(&user.email) {
         Ok(token) => token,
         Err(_err) => return Err(build_api_error("Error building JWT")),
     };
@@ -86,7 +86,7 @@ pub fn sign_in(conn: Database, sign_in: Json<SignIn>) -> ApiResponse<Json<AuthRe
 
 // TODO: Session stuff
 #[post("/sign_out")]
-pub fn sign_out(conn: Database) -> ApiResponse<Status> {
+pub fn sign_out(_conn: Database) -> ApiResponse<Status> {
     Ok(Status::NoContent)
 }
 

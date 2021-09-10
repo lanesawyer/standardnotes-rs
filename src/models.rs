@@ -212,3 +212,54 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
         ))
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct FullSession {
+    pub uuid: String,
+    pub user_uuid: String,
+    pub user_agent: String,
+    pub api_version: String,
+    pub access_token: String,
+    pub refresh_token: String,
+    pub access_expiration: String, // TODO: datetime
+    pub renew_expiration: String, // TODO: datetime
+    pub created_at: String, // TODO: datetime
+    pub updated_at: String, // TODO: datetime
+}
+
+#[derive(Debug, Serialize)]
+pub struct SessionsResponse {
+    pub sessions: Vec<SessionResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SessionResponse {
+    pub uuid: String,
+    pub user_agent: String,
+    pub api_version: String,
+    pub current: bool,
+    pub created_at: String, // TODO: datetime
+}
+
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    pub error: Error,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Error {
+    tag: String,
+    message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshResponse {
+    pub token: String,
+    pub session: RefreshSession,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshSession {
+    pub refresh_expiration: usize, // TODO: datetime?
+    pub refresh_token: String,
+}
