@@ -3,14 +3,15 @@ use crate::models::{AuthResponse, ChangePassword, KeyParams, Session, UserRespon
 use crate::{
     jwt::build_jwt,
     models::{
-        ApiError, ApiResponse, AuthUser, CreateUser, Item, ParamsResponse, SignIn, Sync,
-        SyncResponse, User,
+        ApiResponse, AuthUser, CreateUser, ParamsResponse, SignIn,
+        User,
     },
 };
 use diesel::prelude::*;
 use rocket::http::Status;
-use rocket::Request;
 use rocket_contrib::json::Json;
+
+use super::build_api_error;
 
 #[post("/", data = "<create_user>")]
 pub fn create_user(
@@ -110,56 +111,4 @@ pub fn params(
 #[options("/params/<_params_email>")]
 pub fn params_options(_params_email: String) -> ApiResponse<Status> {
     Ok(Status::NoContent)
-}
-
-#[post("/sync", data = "<sync>")]
-#[allow(unused_variables)]
-pub fn sync(_user: AuthUser, conn: Database, sync: Json<Sync>) -> ApiResponse<Json<SyncResponse>> {
-    use crate::schema::items::dsl::items;
-
-    let sync = sync.into_inner();
-    match diesel::insert_into(items)
-        .values(&sync.items)
-        .get_result::<Item>(&*conn)
-    {
-        Ok(item) => {
-            let hi = "wat";
-
-            // these items are new or have been modified since last sync and should be merged or created locally.
-
-            Ok(Json(SyncResponse {
-                saved_items: Some(sync.items),
-                retrieved_items: None,
-                unsaved: None,
-                sync_token: None,
-            }))
-        }
-        Err(_) => Err(build_api_error("Error syncing item")),
-    }
-}
-
-#[catch(400)]
-pub fn bad_request(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(build_api_error("Bad request"))
-}
-
-#[catch(401)]
-pub fn unauthorized(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(build_api_error("Unauthorized"))
-}
-
-#[catch(404)]
-pub fn not_found(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(build_api_error("Not found"))
-}
-
-#[catch(500)]
-pub fn server_error(_req: &Request) -> ApiResponse<Json<SyncResponse>> {
-    Err(build_api_error("Server error"))
-}
-
-fn build_api_error(error_message: &str) -> ApiError {
-    ApiError {
-        errors: vec![error_message.into()],
-    }
 }
