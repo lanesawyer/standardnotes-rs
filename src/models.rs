@@ -222,9 +222,9 @@ pub struct FullSession {
     pub access_token: String,
     pub refresh_token: String,
     pub access_expiration: String, // TODO: datetime
-    pub renew_expiration: String, // TODO: datetime
-    pub created_at: String, // TODO: datetime
-    pub updated_at: String, // TODO: datetime
+    pub renew_expiration: String,  // TODO: datetime
+    pub created_at: String,        // TODO: datetime
+    pub updated_at: String,        // TODO: datetime
 }
 
 #[derive(Debug, Serialize)]
