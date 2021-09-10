@@ -40,7 +40,7 @@ pub fn rocket() -> rocket::Rocket {
         .mount(
             "/auth",
             routes![
-                api::auth,
+                api::create_user,
                 api::change_pw,
                 api::sign_in,
                 api::params,

@@ -72,28 +72,41 @@ pub struct CreateUser {
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePassword {
-    pub email: String,
-    pub password: String,
+    pub api: String,
+    pub created: String,
+    pub identifier: String,
+    pub origination: String,
     pub current_password: String,
+    pub new_password: String,
+    pub pw_nonce: String,
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SignIn {
+    pub api: String,
     pub email: String,
+    pub ephemeral: bool,
     pub password: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Params {
-    pub pw_cost: i64,
+    pub api: String,
+    pub email: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ParamsResponse {
+    pub identifier: String,
     pub pw_nonce: String,
     pub version: String,
 }
 
-impl From<&User> for Params {
+impl From<&User> for ParamsResponse {
     fn from(user: &User) -> Self {
-        Params {
-            pw_cost: user.pw_cost,
+        ParamsResponse {
+            identifier: user.email.clone(),
             pw_nonce: user.pw_nonce.clone(),
             version: user.version.clone(),
         }
@@ -131,6 +144,36 @@ pub struct SyncResponse {
 pub struct AuthUser {
     email: String,
     // TODO: Probably need more info for the signed in user
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthResponse {
+    pub session: Session,
+    pub key_params: KeyParams,
+    pub user: UserResponse,
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct Session {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub access_expiration: usize,
+    pub refresh_expiration: usize,
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct KeyParams {
+    pub created: String,
+    pub identifier: String,
+    pub origination: String,
+    pub pw_nonce: String,
+    pub version: String,
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct UserResponse {
+    pub uuid: String,
+    pub email: String,
 }
 
 #[derive(Debug)]

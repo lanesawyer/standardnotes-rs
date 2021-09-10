@@ -1,8 +1,9 @@
 use crate::db::Database;
+use crate::models::{AuthResponse, ChangePassword, KeyParams, Session, UserResponse};
 use crate::{
-    jwt::{build_jwt, Token},
+    jwt::build_jwt,
     models::{
-        ApiError, ApiResponse, AuthUser, ChangePassword, CreateUser, Item, Params, SignIn, Sync,
+        ApiError, ApiResponse, AuthUser, CreateUser, Item, ParamsResponse, SignIn, Sync,
         SyncResponse, User,
     },
 };
@@ -12,7 +13,10 @@ use rocket::Request;
 use rocket_contrib::json::Json;
 
 #[post("/", data = "<create_user>")]
-pub fn auth(create_user: Json<CreateUser>, conn: Database) -> ApiResponse<Json<Token>> {
+pub fn create_user(
+    conn: Database,
+    create_user: Json<CreateUser>,
+) -> ApiResponse<Json<AuthResponse>> {
     // TODO: Better conversion
     let user = User {
         email: create_user.email.clone(),
@@ -27,8 +31,12 @@ pub fn auth(create_user: Json<CreateUser>, conn: Database) -> ApiResponse<Json<T
             Err(_err) => return Err(build_api_error("Error building JWT")),
         };
 
-        // TODO: Fix response to match spec
-        Ok(Json(Token { token }))
+        // TODO: Actual data
+        Ok(Json(AuthResponse {
+            session: Session::default(),
+            key_params: KeyParams::default(),
+            user: UserResponse::default(),
+        }))
     } else {
         // TODO: Get these errors to be returned in the response
         Err(build_api_error("Unable to create user account"))
@@ -37,38 +45,46 @@ pub fn auth(create_user: Json<CreateUser>, conn: Database) -> ApiResponse<Json<T
 
 #[post("/change_pw", data = "<change_pw>")]
 pub fn change_pw(
+    conn: Database,
     _user: AuthUser,
     change_pw: Json<ChangePassword>,
-    conn: Database,
-) -> ApiResponse<Status> {
+) -> ApiResponse<Json<AuthResponse>> {
     use crate::schema::users::dsl::{password, users};
-    diesel::update(users.find(&change_pw.email))
+    diesel::update(users.find(&change_pw.identifier))
         .filter(password.eq(&change_pw.current_password))
-        .set(password.eq(&change_pw.password))
+        .set(password.eq(&change_pw.new_password))
         .get_result::<User>(&*conn)
         .expect("Error updating password");
 
-    Ok(Status::NoContent)
+    Ok(Json(AuthResponse {
+        session: Session::default(),
+        key_params: KeyParams::default(),
+        user: UserResponse::default(),
+    }))
 }
 
 #[post("/sign_in", data = "<sign_in>")]
-pub fn sign_in(sign_in: Json<SignIn>, conn: Database) -> ApiResponse<Json<Token>> {
-    use crate::schema::users::dsl::{email, password, users};
+pub fn sign_in(conn: Database, sign_in: Json<SignIn>) -> ApiResponse<Json<AuthResponse>> {
+    // use crate::schema::users::dsl::{email, password, users};
 
-    let result = users
-        .filter(email.eq(&sign_in.email))
-        .filter(password.eq(&sign_in.password))
-        .limit(1)
-        .load::<User>(&*conn)
-        .unwrap();
-    let user = result.first().unwrap();
+    // let result = users
+    //     .filter(email.eq(&sign_in.email))
+    //     .filter(password.eq(&sign_in.password))
+    //     .limit(1)
+    //     .load::<User>(&*conn)
+    //     .unwrap();
+    // let user = result.first().unwrap();
 
-    let token = match build_jwt(&user.email) {
-        Ok(token) => token,
-        Err(_err) => return Err(build_api_error("Error building JWT")),
-    };
+    // let token = match build_jwt(&user.email) {
+    //     Ok(token) => token,
+    //     Err(_err) => return Err(build_api_error("Error building JWT")),
+    // };
 
-    Ok(Json(Token { token }))
+    Ok(Json(AuthResponse {
+        session: Session::default(),
+        key_params: KeyParams::default(),
+        user: UserResponse::default(),
+    }))
 }
 
 #[get("/params?<_email>&<_api>")]
@@ -77,7 +93,7 @@ pub fn params(
     conn: Database,
     _email: String,
     _api: String,
-) -> ApiResponse<Json<Params>> {
+) -> ApiResponse<Json<ParamsResponse>> {
     use crate::schema::users::dsl::{email, users};
 
     let result = users
@@ -87,7 +103,7 @@ pub fn params(
         .unwrap();
     let user = result.first().unwrap();
 
-    Ok(Json(Params::from(user)))
+    Ok(Json(ParamsResponse::from(user)))
 }
 
 // TODO: Set headers for OPTIONS response at some point
@@ -98,7 +114,7 @@ pub fn params_options(_params_email: String) -> ApiResponse<Status> {
 
 #[post("/sync", data = "<sync>")]
 #[allow(unused_variables)]
-pub fn sync(_user: AuthUser, sync: Json<Sync>, conn: Database) -> ApiResponse<Json<SyncResponse>> {
+pub fn sync(_user: AuthUser, conn: Database, sync: Json<Sync>) -> ApiResponse<Json<SyncResponse>> {
     use crate::schema::items::dsl::items;
 
     let sync = sync.into_inner();
