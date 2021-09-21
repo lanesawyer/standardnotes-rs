@@ -1,5 +1,5 @@
 use crate::db::Database;
-use crate::models::{AuthResponse, ChangePassword, KeyParams, Session, UserResponse};
+use crate::models::{AuthResponse, ChangePassword, KeyParams, NewUser, Session, UserResponse};
 use crate::{
     jwt::build_jwt,
     models::{ApiResponse, AuthUser, CreateUser, ParamsResponse, SignIn, User},
@@ -16,11 +16,13 @@ pub fn create_user(
     create_user: Json<CreateUser>,
 ) -> ApiResponse<Json<AuthResponse>> {
     // TODO: Better conversion
-    // TODO: Fix User table
-    let user = User {
+    let user = NewUser {
+        api: create_user.api.clone(),
+        created: create_user.created.clone(),
         email: create_user.email.clone(),
+        identifier: create_user.identifier.clone(),
+        origination: create_user.origination.clone(),
         password: create_user.password.clone(),
-        pw_cost: 100,
         pw_nonce: create_user.pw_nonce.clone(),
         version: create_user.version.clone(),
     };
@@ -32,7 +34,7 @@ pub fn create_user(
         };
 
         Ok(Json(AuthResponse {
-            session: Session::default(), // TODO: Session
+            session: Session::new(), // TODO: Session
             key_params: KeyParams {
                 created: create_user.created.clone(),
                 identifier: create_user.identifier.clone(),

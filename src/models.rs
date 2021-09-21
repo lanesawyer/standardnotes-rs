@@ -33,17 +33,33 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
-#[derive(Debug, Deserialize, Queryable, Insertable)]
+#[derive(Debug, Deserialize, Insertable)]
 #[table_name = "users"]
-pub struct User {
+pub struct NewUser {
+    pub api: String,
+    pub created: String,
     pub email: String,
+    pub identifier: String,
+    pub origination: String,
     pub password: String,
-    pub pw_cost: i64,
     pub pw_nonce: String,
     pub version: String,
 }
 
-impl User {
+#[derive(Debug, Deserialize, Queryable)]
+pub struct User {
+    pub uuid: String, // TODO: Guid type
+    pub api: String,
+    pub created: String,
+    pub email: String,
+    pub identifier: String,
+    pub origination: String,
+    pub password: String,
+    pub pw_nonce: String,
+    pub version: String,
+}
+
+impl NewUser {
     pub fn create<C>(&self, conn: &C) -> bool
     where
         C: diesel::Connection<Backend = Pg>,
@@ -159,6 +175,12 @@ pub struct Session {
     pub refresh_token: String,
     pub access_expiration: usize,
     pub refresh_expiration: usize,
+}
+
+impl Session {
+    pub fn new() -> Self {
+        Session::default()
+    }
 }
 
 #[derive(Debug, Serialize, Default)]
