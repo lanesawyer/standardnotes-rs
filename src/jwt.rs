@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 const ISSUER: &str = "StandardNotesRustServer";
-const EXPIRATION_TIME: usize = 10000000000;
+const _EXPIRATION_TIME: usize = 10000000000;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -19,13 +19,14 @@ pub struct Token {
     pub token: String,
 }
 
-pub fn build_jwt(subject: &str) -> Result<String, Error> {
+// TODO: Remove all this once confirmed it's not being used in new session work
+pub fn _build_jwt(subject: &str) -> Result<String, Error> {
     let token = encode(
         &Header::default(),
         &Claims {
             sub: subject.to_string(),
             iss: String::from(ISSUER),
-            exp: EXPIRATION_TIME,
+            exp: _EXPIRATION_TIME,
         },
         &EncodingKey::from_secret(get_secret().as_bytes()),
     )?;
@@ -56,12 +57,12 @@ mod tests {
     fn jwt_encodes_and_decodes_correctly() {
         std::env::set_var("SN_SECRET", "test_secret");
 
-        let token = super::build_jwt("test@test.com").unwrap();
+        let token = super::_build_jwt("test@test.com").unwrap();
         let decoded_token = super::decode_jwt(&token).unwrap();
 
         assert_eq!(decoded_token.claims.sub, "test@test.com");
         assert_eq!(decoded_token.claims.iss, super::ISSUER);
-        assert_eq!(decoded_token.claims.exp, super::EXPIRATION_TIME);
+        assert_eq!(decoded_token.claims.exp, super::_EXPIRATION_TIME);
     }
 
     #[test]

@@ -31,7 +31,7 @@ pub fn refresh_session(
     Ok(Json(RefreshResponse {
         token: "blah".into(), // TODO: generate token
         session: RefreshSession {
-            refresh_expiration: 123, // TODO: Expiration
+            refresh_expiration: 5184000, // 60 days
             refresh_token: "blah".into(), // TODO: refresh token
         },
     }))

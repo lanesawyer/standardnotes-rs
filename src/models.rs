@@ -9,6 +9,7 @@ use rocket::{
     http::{ContentType, Status},
     request, response, Outcome, Request, Response,
 };
+use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 
@@ -46,6 +47,22 @@ pub struct NewUser {
     pub version: String,
 }
 
+impl From<Json<CreateUser>> for NewUser {
+    fn from(create_user: Json<CreateUser>) -> Self {
+        // TODO: Improve clone usage
+        NewUser {
+            api: create_user.api.clone(),
+            created: create_user.created.clone(),
+            email: create_user.email.clone(),
+            identifier: create_user.identifier.clone(),
+            origination: create_user.origination.clone(),
+            password: create_user.password.clone(),
+            pw_nonce: create_user.pw_nonce.clone(),
+            version: create_user.version.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Queryable)]
 pub struct User {
     pub uuid: String, // TODO: Guid type
@@ -60,20 +77,18 @@ pub struct User {
 }
 
 impl NewUser {
-    pub fn create<C>(&self, conn: &C) -> bool
+    pub fn create<C>(&self, conn: &C) -> User
     where
         C: diesel::Connection<Backend = Pg>,
     {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
-            .expect("Error creating new user");
-
-        true
+            .expect("Error creating new user") // TODO: Return result
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateUser {
     pub api: String,
     pub created: String,
@@ -122,7 +137,7 @@ pub struct ParamsResponse {
 impl From<&User> for ParamsResponse {
     fn from(user: &User) -> Self {
         ParamsResponse {
-            identifier: user.email.clone(), // TODO: Switch to identifier
+            identifier: user.identifier.clone(),
             pw_nonce: user.pw_nonce.clone(),
             version: user.version.clone(),
         }
@@ -169,6 +184,45 @@ pub struct AuthResponse {
     pub user: UserResponse,
 }
 
+impl From<User> for AuthResponse {
+    fn from(user: User) -> Self {
+        AuthResponse {
+            session: Session::default(),
+            key_params: KeyParams {
+                created: user.created.clone(),
+                identifier: user.identifier.clone(),
+                origination: user.origination.clone(),
+                pw_nonce: user.pw_nonce.clone(),
+                version: user.version.clone(),
+            },
+            user: UserResponse {
+                uuid: user.uuid.clone(),
+                email: user.email,
+            },
+        }
+    }
+}
+
+// TODO: Have only one From
+impl From<&User> for AuthResponse {
+    fn from(user: &User) -> Self {
+        AuthResponse {
+            session: Session::default(),
+            key_params: KeyParams {
+                created: user.created.clone(),
+                identifier: user.identifier.clone(),
+                origination: user.origination.clone(),
+                pw_nonce: user.pw_nonce.clone(),
+                version: user.version.clone(),
+            },
+            user: UserResponse {
+                uuid: user.uuid.clone(),
+                email: user.email.clone(),
+            },
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Default)]
 pub struct Session {
     pub access_token: String,
@@ -178,8 +232,13 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new() -> Self {
-        Session::default()
+    pub fn _new() -> Self {
+        Session {
+            access_token: "blah".into(),
+            refresh_token: "blah".into(),
+            access_expiration: 5184000, // 60 days
+            refresh_expiration: 31557600, // 1 year
+        }
     }
 }
 

@@ -1,56 +1,24 @@
 use crate::db::Database;
-use crate::models::{AuthResponse, ChangePassword, KeyParams, NewUser, Session, UserResponse};
-use crate::{
-    jwt::build_jwt,
-    models::{ApiResponse, AuthUser, CreateUser, ParamsResponse, SignIn, User},
-};
+use crate::models::{ApiResponse, AuthUser, CreateUser, ParamsResponse, SignIn, User};
+use crate::models::{AuthResponse, ChangePassword, NewUser};
 use diesel::prelude::*;
 use rocket::http::Status;
 use rocket_contrib::json::Json;
-
-use super::build_api_error;
 
 #[post("/", data = "<create_user>")]
 pub fn create_user(
     conn: Database,
     create_user: Json<CreateUser>,
 ) -> ApiResponse<Json<AuthResponse>> {
-    // TODO: Better conversion
-    let user = NewUser {
-        api: create_user.api.clone(),
-        created: create_user.created.clone(),
-        email: create_user.email.clone(),
-        identifier: create_user.identifier.clone(),
-        origination: create_user.origination.clone(),
-        password: create_user.password.clone(),
-        pw_nonce: create_user.pw_nonce.clone(),
-        version: create_user.version.clone(),
-    };
+    let new_user: NewUser = create_user.into();
+    let created_user = new_user.create(&*conn);
 
-    if user.create(&*conn) {
-        let _token = match build_jwt(&user.email) {
-            Ok(token) => token,
-            Err(_err) => return Err(build_api_error("Error building JWT")),
-        };
-
-        Ok(Json(AuthResponse {
-            session: Session::new(), // TODO: Session
-            key_params: KeyParams {
-                created: create_user.created.clone(),
-                identifier: create_user.identifier.clone(),
-                origination: create_user.origination.clone(),
-                pw_nonce: create_user.pw_nonce.clone(),
-                version: create_user.version.clone(),
-            },
-            user: UserResponse {
-                uuid: "1".into(), // TODO: Add uuid for user
-                email: user.email,
-            },
-        }))
-    } else {
-        // TODO: Get these errors to be returned in the response
-        Err(build_api_error("Unable to create user account"))
-    }
+    Ok(Json(AuthResponse::from(created_user)))
+    // TODO: Handle error
+    // } else {
+    //     // TODO: Get these errors to be returned in the response
+    //     Err(build_api_error("Unable to create user account"))
+    // }
 }
 
 #[post("/sign_in", data = "<sign_in>")]
@@ -62,28 +30,11 @@ pub fn sign_in(conn: Database, sign_in: Json<SignIn>) -> ApiResponse<Json<AuthRe
         .filter(password.eq(&sign_in.password))
         .limit(1)
         .load::<User>(&*conn)
-        .unwrap();
+        .expect("Should've found user");
+
     let user = result.first().unwrap();
 
-    let _token = match build_jwt(&user.email) {
-        Ok(token) => token,
-        Err(_err) => return Err(build_api_error("Error building JWT")),
-    };
-
-    Ok(Json(AuthResponse {
-        session: Session::default(),
-        key_params: KeyParams {
-            created: "created todo".into(),       // TOOD: get created
-            identifier: "todo ideintifer".into(), // TODO: get user?
-            origination: "todo wat".into(),       // TODO: get from user?
-            pw_nonce: "blkahh".into(),            // TODO: get from user?
-            version: "004".into(),                // TODO: Get version from ?User?
-        },
-        user: UserResponse {
-            uuid: "1".into(), // TODO: Add uuid for user
-            email: user.email.clone(),
-        },
-    }))
+    Ok(Json(AuthResponse::from(user)))
 }
 
 // TODO: Session stuff
@@ -124,24 +75,11 @@ pub fn change_pw(
     change_pw: Json<ChangePassword>,
 ) -> ApiResponse<Json<AuthResponse>> {
     use crate::schema::users::dsl::{password, users};
-    diesel::update(users.find(&change_pw.identifier))
+    let user = diesel::update(users.find(&change_pw.identifier))
         .filter(password.eq(&change_pw.current_password))
         .set(password.eq(&change_pw.new_password))
         .get_result::<User>(&*conn)
         .expect("Error updating password");
 
-    Ok(Json(AuthResponse {
-        session: Session::default(),
-        key_params: KeyParams {
-            created: "created todo".into(),       // TOOD: get created
-            identifier: "todo ideintifer".into(), // TODO: get user?
-            origination: "todo wat".into(),       // TODO: get from user?
-            pw_nonce: "blkahh".into(),            // TODO: get from user?
-            version: "004".into(),                // TODO: Get version from ?User?
-        },
-        user: UserResponse {
-            uuid: "1".into(),      // TODO: Add uuid for user
-            email: "email".into(), // TODO: get user
-        },
-    }))
+    Ok(Json(AuthResponse::from(user)))
 }
