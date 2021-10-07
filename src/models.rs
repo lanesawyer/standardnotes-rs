@@ -173,7 +173,7 @@ pub struct SyncResponse {
 
 #[derive(Debug)]
 pub struct AuthUser {
-    email: String,
+    _email: String,
     // TODO: Probably need more info for the signed in user
 }
 
@@ -236,7 +236,7 @@ impl Session {
         Session {
             access_token: "blah".into(),
             refresh_token: "blah".into(),
-            access_expiration: 5184000, // 60 days
+            access_expiration: 5184000,   // 60 days
             refresh_expiration: 31557600, // 1 year
         }
     }
