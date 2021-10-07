@@ -9,6 +9,7 @@ use rocket::{
     http::{ContentType, Status},
     request, response, Outcome, Request, Response,
 };
+use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
 
@@ -33,54 +34,110 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
-#[derive(Debug, Deserialize, Queryable, Insertable)]
+#[derive(Debug, Deserialize, Insertable)]
 #[table_name = "users"]
-pub struct User {
+pub struct NewUser {
+    pub api: String,
+    pub created: String,
     pub email: String,
+    pub identifier: String,
+    pub origination: String,
     pub password: String,
-    pub pw_cost: i64,
     pub pw_nonce: String,
     pub version: String,
 }
 
-impl User {
-    pub fn create<C>(&self, conn: &C) -> bool
+impl From<Json<CreateUser>> for NewUser {
+    fn from(create_user: Json<CreateUser>) -> Self {
+        // TODO: Improve clone usage
+        NewUser {
+            api: create_user.api.clone(),
+            created: create_user.created.clone(),
+            email: create_user.email.clone(),
+            identifier: create_user.identifier.clone(),
+            origination: create_user.origination.clone(),
+            password: create_user.password.clone(),
+            pw_nonce: create_user.pw_nonce.clone(),
+            version: create_user.version.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Queryable)]
+pub struct User {
+    pub uuid: String, // TODO: Guid type
+    pub api: String,
+    pub created: String,
+    pub email: String,
+    pub identifier: String,
+    pub origination: String,
+    pub password: String,
+    pub pw_nonce: String,
+    pub version: String,
+}
+
+impl NewUser {
+    pub fn create<C>(&self, conn: &C) -> User
     where
         C: diesel::Connection<Backend = Pg>,
     {
         diesel::insert_into(users::table)
             .values(self)
             .get_result::<User>(conn)
-            .expect("Error creating new user");
-
-        true
+            .expect("Error creating new user") // TODO: Return result
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateUser {
+    pub api: String,
+    pub created: String,
+    pub email: String,
+    pub ephemeral: bool,
+    pub identifier: String,
+    pub origination: String,
+    pub password: String,
+    pub pw_nonce: String,
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePassword {
-    pub email: String,
-    pub password: String,
+    pub api: String,
+    pub created: String,
+    pub identifier: String,
+    pub origination: String,
     pub current_password: String,
+    pub new_password: String,
+    pub pw_nonce: String,
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SignIn {
+    pub api: String,
     pub email: String,
+    pub ephemeral: bool,
     pub password: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Params {
-    pub pw_cost: i64,
+    pub api: String,
+    pub email: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ParamsResponse {
+    pub identifier: String,
     pub pw_nonce: String,
     pub version: String,
 }
 
-impl From<&User> for Params {
+impl From<&User> for ParamsResponse {
     fn from(user: &User) -> Self {
-        Params {
-            pw_cost: user.pw_cost,
+        ParamsResponse {
+            identifier: user.identifier.clone(),
             pw_nonce: user.pw_nonce.clone(),
             version: user.version.clone(),
         }
@@ -116,8 +173,88 @@ pub struct SyncResponse {
 
 #[derive(Debug)]
 pub struct AuthUser {
-    email: String,
+    _email: String,
     // TODO: Probably need more info for the signed in user
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthResponse {
+    pub session: Session,
+    pub key_params: KeyParams,
+    pub user: UserResponse,
+}
+
+impl From<User> for AuthResponse {
+    fn from(user: User) -> Self {
+        AuthResponse {
+            session: Session::default(),
+            key_params: KeyParams {
+                created: user.created.clone(),
+                identifier: user.identifier.clone(),
+                origination: user.origination.clone(),
+                pw_nonce: user.pw_nonce.clone(),
+                version: user.version.clone(),
+            },
+            user: UserResponse {
+                uuid: user.uuid.clone(),
+                email: user.email,
+            },
+        }
+    }
+}
+
+// TODO: Have only one From
+impl From<&User> for AuthResponse {
+    fn from(user: &User) -> Self {
+        AuthResponse {
+            session: Session::default(),
+            key_params: KeyParams {
+                created: user.created.clone(),
+                identifier: user.identifier.clone(),
+                origination: user.origination.clone(),
+                pw_nonce: user.pw_nonce.clone(),
+                version: user.version.clone(),
+            },
+            user: UserResponse {
+                uuid: user.uuid.clone(),
+                email: user.email.clone(),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct Session {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub access_expiration: usize,
+    pub refresh_expiration: usize,
+}
+
+impl Session {
+    pub fn _new() -> Self {
+        Session {
+            access_token: "blah".into(),
+            refresh_token: "blah".into(),
+            access_expiration: 5184000,   // 60 days
+            refresh_expiration: 31557600, // 1 year
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct KeyParams {
+    pub created: String,
+    pub identifier: String,
+    pub origination: String,
+    pub pw_nonce: String,
+    pub version: String,
+}
+
+#[derive(Debug, Serialize, Default)]
+pub struct UserResponse {
+    pub uuid: String,
+    pub email: String,
 }
 
 #[derive(Debug)]
@@ -138,7 +275,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
             match decode_jwt(&header[7..]) {
                 Ok(token) => {
                     return Outcome::Success(AuthUser {
-                        email: token.claims.sub,
+                        _email: token.claims.sub,
                     });
                 }
                 Err(e) => println!("{}", e),
@@ -155,4 +292,55 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
             ApiKeyError(String::from("Unable to authenticate")),
         ))
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct FullSession {
+    pub uuid: String,
+    pub user_uuid: String,
+    pub user_agent: String,
+    pub api_version: String,
+    pub access_token: String,
+    pub refresh_token: String,
+    pub access_expiration: String, // TODO: datetime
+    pub renew_expiration: String,  // TODO: datetime
+    pub created_at: String,        // TODO: datetime
+    pub updated_at: String,        // TODO: datetime
+}
+
+#[derive(Debug, Serialize)]
+pub struct SessionsResponse {
+    pub sessions: Vec<SessionResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SessionResponse {
+    pub uuid: String,
+    pub user_agent: String,
+    pub api_version: String,
+    pub current: bool,
+    pub created_at: String, // TODO: datetime
+}
+
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    pub error: Error,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Error {
+    tag: String,
+    message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshResponse {
+    pub token: String,
+    pub session: RefreshSession,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefreshSession {
+    pub refresh_expiration: usize, // TODO: datetime?
+    pub refresh_token: String,
 }

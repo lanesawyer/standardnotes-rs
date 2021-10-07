@@ -40,14 +40,24 @@ pub fn rocket() -> rocket::Rocket {
         .mount(
             "/auth",
             routes![
-                api::auth,
-                api::change_pw,
-                api::sign_in,
-                api::params,
-                api::params_options
+                api::auth::create_user,
+                api::auth::sign_in,
+                api::auth::sign_out,
+                api::auth::params,
+                api::auth::params_options,
+                api::auth::change_pw
             ],
         )
-        .mount("/items", routes![api::sync])
+        .mount(
+            "/",
+            routes![
+                api::session::delete_session,
+                api::session::delete_sessions,
+                api::session::get_sessions,
+                api::session::refresh_session,
+            ],
+        )
+        .mount("/items", routes![api::sync::sync])
         .register(catchers![
             api::bad_request,
             api::unauthorized,

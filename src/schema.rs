@@ -11,10 +11,14 @@ table! {
 }
 
 table! {
-    users (email) {
+    users (uuid) {
+        uuid -> Text,
+        api -> Text,
+        created -> Text,
         email -> Text,
+        identifier -> Text,
+        origination -> Text,
         password -> Text,
-        pw_cost -> Int8,
         pw_nonce -> Text,
         version -> Text,
     }
