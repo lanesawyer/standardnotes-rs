@@ -275,7 +275,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
             match decode_jwt(&header[7..]) {
                 Ok(token) => {
                     return Outcome::Success(AuthUser {
-                        email: token.claims.sub,
+                        _email: token.claims.sub,
                     });
                 }
                 Err(e) => println!("{}", e),
