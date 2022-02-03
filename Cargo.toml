@@ -10,7 +10,7 @@ diesel = { version = "1.4.8", features = ["postgres", "chrono", "uuid"] }
 diesel_migrations = "1.4.0"
 dotenv = "0.15.0"
 env_logger = "0.9.0"
-jsonwebtoken = "7"
+jsonwebtoken = "8"
 log = "0.4.14"
 rocket = "0.4.10"
 serde = { version = "1.0", features = ["derive"] }
