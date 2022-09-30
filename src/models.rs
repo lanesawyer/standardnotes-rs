@@ -34,6 +34,7 @@ impl<'r> Responder<'r> for ApiError {
     }
 }
 
+// TODO: Split models into their domains
 #[derive(Debug, Deserialize, Insertable)]
 #[table_name = "users"]
 pub struct NewUser {
@@ -146,21 +147,37 @@ impl From<&User> for ParamsResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct Sync {
+    pub api: String,
+    pub compute_integrity: boolean,
     pub items: Vec<Item>,
+    limit: Option<String>, // TODO: Does it need to be optional?
     sync_token: String,
-    limit: Option<String>,
+    cursor_token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "items"]
 pub struct Item {
     uuid: String,
-    content: String,
+    content: String, // TODO: Content type
     content_type: String,
     enc_item_key: String,
     deleted: bool,
     created_at: String, // DateTime<Utc>,
     updated_at: String, // DateTime<Utc>,
+}
+
+// TODO: Conflict type
+pub struct Conflict {
+    server_item: Option<Item>,
+    unsaved_item: Option<Item>,
+    r#type: ConflictType,
+}
+
+// TODO: Make sure this returns the string representation of the value
+pub enum ConflictType {
+    sync_conflict,
+    uuid_conflict,
 }
 
 #[derive(Debug, Serialize)]

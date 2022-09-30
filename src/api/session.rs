@@ -12,7 +12,7 @@ pub fn delete_session(_conn: Database, _uuid: String) -> ApiResponse<Status> {
 
 #[delete("/sessions")]
 pub fn delete_sessions(_conn: Database) -> ApiResponse<Status> {
-    // TODO: Delete all session for user
+    // TODO: Delete all session for user except the current one
     Ok(Status::NoContent)
 }
 
