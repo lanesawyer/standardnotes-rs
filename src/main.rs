@@ -1,23 +1,18 @@
 #![deny(
-    missing_docs,
+    // missing_docs, TODO: turn on, but it's failing on the #[launch] rocket function
     missing_debug_implementations,
     bare_trait_objects,
     anonymous_parameters,
     unused_imports
 )]
 
-//! A synchronisation server for Standard Notes, written in Rust.
-#![feature(proc_macro_hygiene, decl_macro)]
-
+//! A synchronization server for Standard Notes, written in Rust.
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
-extern crate rocket_contrib;
-#[macro_use]
 extern crate diesel_migrations;
-#[macro_use]
 extern crate log;
 
 #[cfg(test)]
@@ -32,11 +27,14 @@ mod jwt;
 mod models;
 mod schema;
 
+#[launch]
 /// Makes a rocket that is ready for launch
-pub fn rocket() -> rocket::Rocket {
-    rocket::ignite()
+pub fn rocket() -> _ {
+    dotenv().ok();
+
+    rocket::build()
         .attach(db::Database::fairing())
-        .attach(AdHoc::on_attach("Database Migrations", db::run_migrations))
+        .attach(AdHoc::on_ignite("Database Migrations", db::run_migrations))
         .mount(
             "/auth",
             routes![
@@ -58,16 +56,10 @@ pub fn rocket() -> rocket::Rocket {
             ],
         )
         .mount("/items", routes![api::sync::sync])
-        .register(catchers![
+        .register("/", catchers![
             api::bad_request,
             api::unauthorized,
             api::not_found,
             api::server_error
         ])
-}
-
-fn main() {
-    dotenv().ok();
-
-    rocket().launch();
 }

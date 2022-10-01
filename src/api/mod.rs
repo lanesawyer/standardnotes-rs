@@ -1,6 +1,6 @@
 use crate::models::{ApiError, ApiResponse, SyncResponse};
 use rocket::Request;
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 
 pub mod auth;
 pub mod session;

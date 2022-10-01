@@ -2,7 +2,7 @@ use crate::db::Database;
 use crate::models::ApiResponse;
 use crate::models::{RefreshResponse, RefreshSession, SessionsResponse};
 use rocket::http::Status;
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 
 #[delete("/session", data = "<_uuid>")]
 pub fn delete_session(_conn: Database, _uuid: String) -> ApiResponse<Status> {

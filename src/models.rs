@@ -3,15 +3,12 @@ use crate::jwt::decode_jwt;
 use crate::schema::{items, users};
 // use chrono::{DateTime, Utc};
 use diesel::pg::Pg;
-use request::FromRequest;
-use response::Responder;
 use rocket::{
     http::{ContentType, Status},
-    request, response, Outcome, Request, Response,
+    request::{FromRequest, Outcome}, response::{Responder, Result as RocketResult}, Request, Response,
 };
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
-use std::io::Cursor;
 
 pub type ApiResponse<T> = Result<T, ApiError>;
 
@@ -21,14 +18,14 @@ pub struct ApiError {
     pub errors: Vec<String>,
 }
 
-impl<'r> Responder<'r> for ApiError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
+impl<'r> Responder<'r, 'r> for ApiError {
+    fn respond_to(self, _: &Request) -> RocketResult<'r> {
         Response::build()
             // TODO: Use errors from self
-            .sized_body(Cursor::new(format!(
-                "{{\"errors\":[\"{}\"]}}",
-                self.errors.join(", ")
-            )))
+            // .sized_body(Cursor::new(format!(
+            //     "{{\"errors\":[\"{}\"]}}",
+            //     self.errors.join(", ")
+            // )))
             .header(ContentType::new("application", "json"))
             .ok()
     }
@@ -260,10 +257,11 @@ pub struct UserResponse {
 #[derive(Debug)]
 pub struct ApiKeyError(pub String);
 
-impl<'a, 'r> FromRequest<'a, 'r> for AuthUser {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for AuthUser {
     type Error = ApiKeyError;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+    async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         if let Some(header) = request.headers().get_one("Authorization") {
             if !header.starts_with("Bearer ") {
                 return Outcome::Failure((
